@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/uicons-thin-rounded/css/uicons-thin-rounded.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 :root{
   --ink:#0e0e0f; --muted:#6e6e73; --line:#d2d2d7; --line-soft:#e8e8ed;
@@ -204,10 +205,16 @@ a{color:inherit;text-decoration:none}
 .info-card .li{display:flex;gap:14px;align-items:flex-start;margin-bottom:16px;font-size:16px}
 .info-card .li:last-child{margin-bottom:0}
 .info-card .ic{font-size:18px;width:24px}
-.map-ph{height:240px;border-radius:var(--r);position:relative;background:#e8e8ed}
-.map-ph::after{content:"Mapa — Jurečkova 490/3, Ostrava";position:absolute;left:50%;top:50%;
-  transform:translate(-50%,-50%);background:rgba(255,255,255,.8);backdrop-filter:blur(4px);
-  padding:8px 16px;border-radius:980px;font-size:13px;font-weight:500}
+.map-box{height:280px;border-radius:var(--r);overflow:hidden;border:1px solid var(--line);
+  position:relative;z-index:0;background:#e8e8ed}
+.brand-pin{background:none;border:none}
+.brand-pin .pin{position:relative;width:26px;height:26px;background:var(--accent);
+  border:3px solid var(--ink);border-radius:50% 50% 50% 0;transform:rotate(-45deg);
+  box-shadow:0 4px 10px rgba(0,0,0,.35)}
+.brand-pin .pin::after{content:"";position:absolute;top:6px;left:6px;width:8px;height:8px;
+  border-radius:50%;background:var(--ink)}
+.leaflet-popup-content{font-family:inherit;font-size:13.5px}
+.leaflet-popup-content b{font-size:14px}
 
 /* big CTA section */
 .cta-wrap{text-align:left}
@@ -292,6 +299,81 @@ footer a:hover{color:var(--ink)}
 .g-score{font-size:42px;font-weight:800;line-height:1}
 .g-stars{color:#F5B400;font-size:27px;letter-spacing:3px}
 .g-note{color:var(--muted);font-size:14px;margin:10px 0 24px}
+
+/* ===== heslová brána ===== */
+.gate{position:fixed;inset:0;z-index:300;background:var(--bg);display:flex;align-items:center;
+  justify-content:center;padding:24px}
+.gate.hide{display:none}
+.gate-box{max-width:380px;width:100%;text-align:left}
+.gate-box h2{font-size:28px;margin:6px 0 0;max-width:none}
+.gate-box p{color:var(--muted);margin:10px 0 22px;font-size:15px}
+
+/* ===== režim komentářů (review) ===== */
+.cm-tools{position:fixed;left:14px;bottom:14px;z-index:150;display:flex;gap:8px}
+.cm-btn{display:inline-flex;align-items:center;gap:7px;background:var(--ink);color:#fff;border:none;
+  border-radius:980px;padding:9px 15px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;
+  box-shadow:0 10px 24px -12px rgba(0,0,0,.5)}
+.cm-btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--line)}
+.cm-btn.on{background:var(--accent);color:var(--ink)}
+.cm-badge{min-width:20px;height:20px;border-radius:980px;background:var(--accent);color:var(--ink);
+  font-size:12px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;padding:0 5px}
+body.cm-add,body.cm-add *{cursor:crosshair !important}
+.cm-pin{position:absolute;z-index:140;width:26px;height:26px;border-radius:50% 50% 50% 0;
+  background:var(--accent);border:2px solid var(--ink);transform:translate(-50%,-100%) rotate(-45deg);
+  cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 8px rgba(0,0,0,.3)}
+.cm-pin span{transform:rotate(45deg);font-size:12px;font-weight:800;color:var(--ink)}
+.cm-input{position:absolute;z-index:155;background:#fff;border:1px solid var(--line);border-radius:14px;
+  padding:12px;width:270px;box-shadow:0 18px 40px -16px rgba(0,0,0,.45);transform:translate(-50%,12px)}
+.cm-input textarea{width:100%;border:1px solid var(--line);border-radius:10px;padding:9px;font-family:inherit;
+  font-size:14px;min-height:64px;resize:vertical}
+.cm-input .row{display:flex;gap:8px;margin-top:8px;justify-content:flex-end}
+.cm-input button{border:none;border-radius:8px;padding:7px 13px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
+.cm-save{background:var(--ink);color:#fff}
+.cm-cancel{background:var(--bg2);color:var(--ink)}
+.cm-panel{position:fixed;top:0;right:0;bottom:0;width:350px;max-width:92vw;background:#fff;z-index:160;
+  box-shadow:-20px 0 50px -20px rgba(0,0,0,.35);transform:translateX(100%);transition:transform .3s;
+  display:flex;flex-direction:column}
+.cm-panel.show{transform:none}
+.cm-panel-head{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--line)}
+.cm-panel-head b{font-size:16px}
+.cm-items{flex:1;overflow-y:auto;padding:14px 20px}
+.cm-item{border:1px solid var(--line-soft);border-radius:12px;padding:12px 14px;margin-bottom:10px}
+.cm-item .pg{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.cm-item p{font-size:14px;margin:5px 0 0;line-height:1.4}
+.cm-item .del{font-size:12px;color:#c0392b;cursor:pointer;margin-top:7px;display:inline-block}
+.cm-panel-foot{padding:16px 20px;border-top:1px solid var(--line);display:flex;gap:10px}
+.cm-panel-foot .btn{flex:1;padding:11px 12px;font-size:13.5px}
+.cm-empty{color:var(--muted);font-size:14px;text-align:center;padding:34px 14px}
+
+/* ===== rezervace schůzky (calendly-style) ===== */
+.modal.book{max-width:580px;padding:30px}
+.book-head{display:flex;gap:14px;align-items:flex-start;border-bottom:1px solid var(--line-soft);
+  padding-bottom:20px;margin-bottom:22px}
+.book-ava{width:50px;height:50px;border-radius:50%;background:var(--bg2);display:flex;align-items:center;
+  justify-content:center;font-size:24px;color:var(--muted);flex:0 0 50px}
+.book-host{font-size:12.5px;color:var(--muted);font-weight:600}
+.modal.book h3{font-size:21px;margin:3px 0 9px;padding-right:30px}
+.book-meta{display:flex;flex-wrap:wrap;gap:7px}
+.book-meta span{font-size:12.5px;background:var(--bg2);border-radius:980px;padding:4px 12px;color:var(--ink)}
+.book-label{font-size:13px;font-weight:600;color:var(--muted);font-family:"IBM Plex Mono",monospace;
+  text-transform:lowercase;font-variant:small-caps;letter-spacing:.04em;margin:0 0 11px}
+.book-days{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;margin-bottom:22px}
+.book-day{flex:0 0 auto;border:1px solid var(--line);border-radius:14px;padding:10px 13px;text-align:center;
+  cursor:pointer;background:#fff;transition:.15s;min-width:60px}
+.book-day:hover{border-color:var(--ink)}
+.book-day.sel{background:var(--ink);color:#fff;border-color:var(--ink)}
+.book-day .wd{font-size:11px;text-transform:uppercase;letter-spacing:.05em;opacity:.7}
+.book-day .dt{font-size:15px;font-weight:700;margin-top:2px}
+.book-times{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.book-time{border:1px solid var(--line);border-radius:10px;padding:11px 0;text-align:center;cursor:pointer;
+  font-weight:600;font-size:14px;background:#fff;transition:.15s}
+.book-time:hover{border-color:var(--ink)}
+.book-chosen{background:var(--bg2);border-radius:14px;padding:16px;margin:14px 0 20px;font-size:17px;
+  font-weight:700;text-align:center}
+.book-success{text-align:center}
+.book-success .ok{width:58px;height:58px;border-radius:50%;background:var(--accent);display:flex;
+  align-items:center;justify-content:center;margin:4px auto 16px;font-size:28px;color:var(--ink);font-weight:700}
+@media(max-width:560px){.book-times{grid-template-columns:repeat(3,1fr)}.modal.book{padding:24px 20px}}
 
 /* ===== FAQ dropdown ===== */
 .faq{margin-top:30px;border-top:1px solid var(--line)}
@@ -456,6 +538,18 @@ footer a:hover{color:var(--ink)}
 </head>
 <body class="snap">
 
+<!-- ===== HESLOVÁ BRÁNA ===== -->
+<div id="gate" class="gate">
+  <div class="gate-box">
+    <div class="kicker">honzasilny.cz</div>
+    <h2>Náhled webu</h2>
+    <p>Tato ukázka je chráněná heslem. Zadejte prosím heslo pro pokračování.</p>
+    <input type="password" id="gateInput" class="exit-input" placeholder="Heslo">
+    <a class="btn accent" id="gateBtn" style="margin-top:14px;width:100%">Vstoupit</a>
+    <p id="gateErr" class="micro" style="color:#c0392b;display:none;margin-top:12px">Nesprávné heslo, zkuste to znovu.</p>
+  </div>
+</div>
+
 <!-- ===== NAV ===== -->
 <header class="nav" id="nav">
   <div class="wrap">
@@ -466,7 +560,7 @@ footer a:hover{color:var(--ink)}
       <a data-go="reference">Reference</a>
       <a data-go="blog">Blog</a>
       <a data-go="kontakt">Kontakt</a>
-      <a class="cta-btn" data-go="kontakt">Schůzka zdarma</a>
+      <a class="cta-btn" data-book>Schůzka zdarma</a>
     </nav>
     <div class="burger" id="burger" aria-label="Menu"><span></span><span></span><span></span></div>
   </div>
@@ -482,7 +576,7 @@ footer a:hover{color:var(--ink)}
         <h1 class="display">Finance pod kontrolou.</h1>
         <p class="lead">Jednoduše a beze stresu. Pomáhám lidem, rodinám i podnikatelům dívat se na finance jako na propojený celek — srozumitelně a bez žargonu.</p>
         <div class="btn-row" style="margin-top:30px">
-          <a class="btn accent" data-go="kontakt">Sjednat schůzku zdarma</a>
+          <a class="btn accent" data-book>Sjednat schůzku zdarma</a>
           <a class="btn ghost" href="tel:+420776110525">Zavolat: 776 110 525</a>
         </div>
         <p class="micro">Nezávazně a zdarma · ozvu se do 24 hodin</p>
@@ -627,7 +721,7 @@ footer a:hover{color:var(--ink)}
     <div class="wrap cta-wrap">
       <h2 class="display" style="font-size:clamp(34px,5.5vw,68px)">První schůzka je zdarma.</h2>
       <p class="lead">Probereme vaši situaci a uvidíte, jestli vám můj styl sedne. Bez závazků a bez tlaku.</p>
-      <div class="btn-row" style="margin-top:30px"><a class="btn accent" data-go="kontakt">Domluvit schůzku</a><a class="btn ghost" href="tel:+420776110525">Zavolat: 776 110 525</a></div>
+      <div class="btn-row" style="margin-top:30px"><a class="btn accent" data-book>Domluvit schůzku</a><a class="btn ghost" href="tel:+420776110525">Zavolat: 776 110 525</a></div>
       <p class="micro">Online i osobně v Ostravě · ozvu se do 24 hodin</p>
     </div>
   </section>
@@ -750,7 +844,7 @@ footer a:hover{color:var(--ink)}
         <div class="svc onwhite"><div class="ic"><i class="fi fi-tr-house-laptop"></i></div><h3>Online i osobně</h3><p>Efektivně z domova, nebo u kávy v Ostravě.</p></div>
       </div>
       <p class="lead" style="margin-top:30px">Mám veškeré potřebné certifikace a registrace pro výkon finančního poradenství. Spolupracuji s předními bankami a pojišťovnami na trhu.</p>
-      <div class="btn-row" style="margin-top:26px"><a class="btn" data-go="kontakt">Poznejme se — schůzka zdarma</a></div>
+      <div class="btn-row" style="margin-top:26px"><a class="btn" data-book>Poznejme se — schůzka zdarma</a></div>
     </div>
   </section>
   <div class="footer-host"></div>
@@ -812,7 +906,7 @@ footer a:hover{color:var(--ink)}
         <div class="post" data-go="article"><div class="ph"></div><div class="body"><span class="tag">Investice</span><h3>Kolik měsíčně spořit, abyste nepřišli o hodnotu peněz</h3><p>Inflace, úspory a zdravý rozum.</p><span class="post-more">Číst článek</span></div></div>
         <div class="post" data-go="article"><div class="ph"></div><div class="body"><span class="tag">Pro OSVČ</span><h3>5 finančních chyb podnikatelů, které stojí peníze</h3><p>Na co si dát pozor, když podnikáte.</p><span class="post-more">Číst článek</span></div></div>
       </div>
-      <div class="btn-row" style="margin-top:40px"><a class="btn" data-go="kontakt">Potřebujete poradit? Schůzka zdarma</a></div>
+      <div class="btn-row" style="margin-top:40px"><a class="btn" data-book>Potřebujete poradit? Schůzka zdarma</a></div>
     </div>
   </section>
   <div class="footer-host"></div>
@@ -870,7 +964,7 @@ footer a:hover{color:var(--ink)}
 
         <div class="cta-mini" style="max-width:720px;margin:24px auto 0">
           <div><b>Řešíte hypotéku?</b><span>Probereme vaši situaci nezávazně a zdarma.</span></div>
-          <a class="btn accent" data-go="kontakt">Sjednat schůzku</a>
+          <a class="btn accent" data-book>Sjednat schůzku</a>
         </div>
 
         <div class="art-related">
@@ -898,7 +992,9 @@ footer a:hover{color:var(--ink)}
   <section class="block">
     <div class="wrap contact-grid">
       <div>
-        <h2 style="font-size:30px;margin-bottom:22px">Schůzka zdarma</h2>
+        <h2 style="font-size:30px;margin-bottom:16px">Schůzka zdarma</h2>
+        <a class="btn accent" data-book style="margin-bottom:10px">Rezervovat termín online</a>
+        <p class="micro" style="margin:8px 0 24px">Vyberte si volný termín v kalendáři — nebo mi napište zprávou níže.</p>
         <div class="field"><label>Jméno a příjmení</label><input type="text" placeholder="Jan Novák"></div>
         <div class="field"><label>Telefon nebo e-mail</label><input type="text" placeholder="+420 …"></div>
         <div class="field"><label>Vaše zpráva</label><textarea placeholder="S čím vám můžu pomoct?"></textarea></div>
@@ -913,7 +1009,7 @@ footer a:hover{color:var(--ink)}
           <div class="li"><span class="ic"><i class="fi fi-tr-envelope-open"></i></span><div><b>E-mail</b><br>info@honzasilny.cz</div></div>
           <div class="li"><span class="ic"><i class="fi fi-tr-camera-retro"></i></span><div><b>Instagram</b><br>@financeshonzou</div></div>
         </div>
-        <div class="map-ph"></div>
+        <div id="map" class="map-box"></div>
         <div class="svc-grid" style="grid-template-columns:1fr 1fr;margin-top:18px">
           <div class="svc onwhite" style="padding:22px"><div class="ic" style="width:40px;height:40px;font-size:18px"><i class="fi fi-tr-house-laptop"></i></div><h3 style="font-size:17px">Online schůzka</h3><p style="font-size:13.5px">Z pohodlí domova.</p></div>
           <div class="svc onwhite" style="padding:22px"><div class="ic" style="width:40px;height:40px;font-size:18px"><i class="fi fi-tr-coffee-pot"></i></div><h3 style="font-size:17px">Osobně</h3><p style="font-size:13.5px">Na kávu v Ostravě.</p></div>
@@ -957,6 +1053,42 @@ footer a:hover{color:var(--ink)}
   </div>
 </div>
 
+<!-- ===== REŽIM KOMENTÁŘŮ (review) ===== -->
+<div class="cm-tools" id="cmTools">
+  <button class="cm-btn" id="cmToggle"><i class="fi fi-tr-comment-dots"></i> <span>Přidat komentář</span></button>
+  <button class="cm-btn ghost" id="cmOpen">Komentáře <span class="cm-badge" id="cmBadge">0</span></button>
+</div>
+<div class="cm-panel" id="cmPanel">
+  <div class="cm-panel-head"><b>Komentáře k webu</b><button class="modal-x" id="cmClose" style="position:static">×</button></div>
+  <div class="cm-items" id="cmItems"></div>
+  <div class="cm-panel-foot">
+    <a class="btn accent" id="cmSend">Odeslat Kristýně</a>
+    <button class="btn ghost" id="cmDownload">Stáhnout</button>
+  </div>
+</div>
+
+<!-- ===== REZERVACE SCHŮZKY (calendly-style) ===== -->
+<div class="modal-ov" id="bookModal">
+  <div class="modal book">
+    <button class="modal-x" data-close-book>×</button>
+    <div class="book-head">
+      <div class="book-ava"><i class="fi fi-tr-circle-user"></i></div>
+      <div>
+        <div class="book-host">Bc. Jan Silný · finanční poradce</div>
+        <h3>Rezervace nezávazné konzultace</h3>
+        <div class="book-meta"><span>30 minut</span><span>online i osobně</span><span>zdarma</span></div>
+      </div>
+    </div>
+    <div id="bookStep1">
+      <p class="book-label">Vyberte den</p>
+      <div class="book-days" id="bookDays"></div>
+      <p class="book-label">Vyberte čas</p>
+      <div class="book-times" id="bookTimes"></div>
+    </div>
+    <div id="bookStep2" hidden></div>
+  </div>
+</div>
+
 <!-- ===== EXIT-INTENT POPUP ===== -->
 <div class="modal-ov" id="exitPop">
   <div class="modal">
@@ -982,11 +1114,24 @@ footer a:hover{color:var(--ink)}
   </a>
 </div>
 
-<div class="proto-flag">Wireframe Č/B · Apple style · placeholdery</div>
-
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
   const ftpl = document.getElementById('footer-tpl').content;
   document.querySelectorAll('.footer-host').forEach(h=>h.appendChild(ftpl.cloneNode(true)));
+
+  /* ===== heslová brána ===== */
+  const SITE_PASSWORD = "honza2026";   // <<< ZDE změňte heslo k náhledu
+  const gate=document.getElementById('gate');
+  function unlock(){ gate.classList.add('hide'); try{sessionStorage.setItem('honza_ok','1');}catch(e){} }
+  function tryUnlock(){
+    if(document.getElementById('gateInput').value===SITE_PASSWORD) unlock();
+    else document.getElementById('gateErr').style.display='block';
+  }
+  try{ if(sessionStorage.getItem('honza_ok')==='1') unlock(); }catch(e){}
+  document.getElementById('gateBtn').addEventListener('click',tryUnlock);
+  document.getElementById('gateInput').addEventListener('keydown',e=>{ if(e.key==='Enter') tryUnlock(); });
+
+  let currentPage='home';
 
   const pages = document.querySelectorAll('.page');
   const menuLinks = document.querySelectorAll('.menu a[data-go]');
@@ -1051,6 +1196,8 @@ footer a:hover{color:var(--ink)}
     window.scrollTo({top:0,behavior:'instant'});
     document.getElementById('nav').classList.remove('open');
     revealPage(p);
+    currentPage = p; cmRenderPins();
+    if(p==='kontakt') setTimeout(initMap, 90);
     if(scrollId){
       const el=document.getElementById(scrollId);
       if(el) requestAnimationFrame(()=>setTimeout(()=>el.scrollIntoView({behavior:'smooth',block:'start'}),80));
@@ -1063,8 +1210,165 @@ footer a:hover{color:var(--ink)}
   const burger=document.getElementById('burger');
   if(burger) burger.addEventListener('click',()=>document.getElementById('nav').classList.toggle('open'));
 
+  /* ===== rezervace schůzky (calendly-style) ===== */
+  const bookModal=document.getElementById('bookModal');
+  const csDay=['ne','po','út','st','čt','pá','so'];
+  let chosenDay=null, chosenTime=null;
+  function openBook(){
+    document.getElementById('bookStep1').hidden=false;
+    document.getElementById('bookStep2').hidden=true;
+    buildDays();
+    bookModal.classList.add('show');
+  }
+  function buildDays(){
+    const wrap=document.getElementById('bookDays'); wrap.innerHTML='';
+    document.getElementById('bookTimes').innerHTML='<p style="color:var(--muted);font-size:14px;grid-column:1/-1;margin:0">Nejdřív vyberte den.</p>';
+    chosenDay=chosenTime=null;
+    const d=new Date(); let added=0;
+    while(added<8){
+      d.setDate(d.getDate()+1);
+      const wd=d.getDay(); if(wd===0||wd===6) continue;
+      const label=csDay[wd]+' '+d.getDate()+'. '+(d.getMonth()+1)+'.';
+      const el=document.createElement('div'); el.className='book-day';
+      el.innerHTML='<div class="wd">'+csDay[wd]+'</div><div class="dt">'+d.getDate()+'.'+(d.getMonth()+1)+'.</div>';
+      el.addEventListener('click',()=>{ chosenDay=label;
+        [...wrap.children].forEach(c=>c.classList.remove('sel')); el.classList.add('sel'); buildTimes(); });
+      wrap.appendChild(el); added++;
+    }
+  }
+  function buildTimes(){
+    const t=document.getElementById('bookTimes'); t.innerHTML='';
+    ['9:00','10:00','11:00','13:00','14:00','15:00','16:00','17:00'].forEach(time=>{
+      const b=document.createElement('div'); b.className='book-time'; b.textContent=time;
+      b.addEventListener('click',()=>{ chosenTime=time; showBookConfirm(); });
+      t.appendChild(b);
+    });
+  }
+  function showBookConfirm(){
+    document.getElementById('bookStep1').hidden=true;
+    const s2=document.getElementById('bookStep2'); s2.hidden=false;
+    s2.innerHTML='<p class="book-label">Shrnutí rezervace</p>'
+      +'<div class="book-chosen">'+chosenDay+' v '+chosenTime
+      +'<br><span style="font-weight:400;color:var(--muted);font-size:14px">Nezávazná konzultace · 30 min · online</span></div>'
+      +'<div class="btn-row" style="justify-content:center"><a class="btn accent" id="bookConfirm">Potvrdit rezervaci</a>'
+      +'<a class="btn ghost" id="bookBack">Zpět</a></div>';
+    document.getElementById('bookConfirm').addEventListener('click',bookDone);
+    document.getElementById('bookBack').addEventListener('click',()=>{
+      s2.hidden=true; document.getElementById('bookStep1').hidden=false; });
+  }
+  function bookDone(){
+    const s2=document.getElementById('bookStep2');
+    s2.innerHTML='<div class="book-success"><div class="ok">✓</div>'
+      +'<h3 style="margin-bottom:10px">Termín rezervován</h3>'
+      +'<p style="color:var(--muted);font-size:15px;max-width:400px;margin:0 auto;line-height:1.5"><b style="color:var(--ink)">'+chosenDay+' v '+chosenTime+'</b><br><br>Toto je ukázka prototypu — na hotovém webu by se termín rovnou zapsal do Honzova kalendáře (Calendly / Google Calendar) a vám i jemu by přišlo e-mailové potvrzení.</p>'
+      +'<div class="btn-row" style="justify-content:center;margin-top:22px"><a class="btn" data-close-book>Hotovo</a></div></div>';
+  }
+  document.addEventListener('click',e=>{
+    if(e.target.closest('[data-book]')){ e.preventDefault(); openBook(); return; }
+    if(e.target.closest('[data-close-book]')) bookModal.classList.remove('show');
+  });
+
+  /* ===== interaktivní mapa (kontakt) ===== */
+  let mapInited=false;
+  function initMap(){
+    if(mapInited || typeof L==='undefined') return;
+    const el=document.getElementById('map'); if(!el) return;
+    mapInited=true;
+    const lat=49.83312, lng=18.28736;
+    const map=L.map('map',{scrollWheelZoom:false}).setView([lat,lng],16);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{
+      maxZoom:19, attribution:'&copy; OpenStreetMap &copy; CARTO'
+    }).addTo(map);
+    const icon=L.divIcon({className:'brand-pin',html:'<div class="pin"></div>',
+      iconSize:[28,40], iconAnchor:[14,36], popupAnchor:[0,-32]});
+    L.marker([lat,lng],{icon}).addTo(map)
+      .bindPopup('<b>Bc. Jan Silný</b><br>Jurečkova 490/3, Ostrava');
+    setTimeout(()=>map.invalidateSize(), 200);
+  }
+
+  /* ===== režim komentářů (review) ===== */
+  const CM_KEY='honza_cm';
+  const pageNames={home:'Domů',sluzby:'Služby',detail:'Detail služby',omne:'O mně',reference:'Reference',blog:'Blog',article:'Článek',kontakt:'Kontakt'};
+  let cmAdding=false;
+  function cmLoad(){ try{return JSON.parse(localStorage.getItem(CM_KEY))||[];}catch(e){return [];} }
+  function cmSaveAll(a){ try{localStorage.setItem(CM_KEY,JSON.stringify(a));}catch(e){} }
+  function cmUpdateBadge(){ document.getElementById('cmBadge').textContent=cmLoad().length; }
+  function escapeHtml(s){return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+  const cmToggle=document.getElementById('cmToggle');
+  cmToggle.addEventListener('click',()=>{
+    cmAdding=!cmAdding;
+    cmToggle.classList.toggle('on',cmAdding);
+    document.body.classList.toggle('cm-add',cmAdding);
+    cmToggle.querySelector('span').textContent=cmAdding?'Klikněte na místo…':'Přidat komentář';
+  });
+  document.getElementById('cmOpen').addEventListener('click',()=>{ cmRenderList(); document.getElementById('cmPanel').classList.add('show'); });
+  document.getElementById('cmClose').addEventListener('click',()=>document.getElementById('cmPanel').classList.remove('show'));
+
+  document.addEventListener('click',function(e){
+    if(!cmAdding) return;
+    if(e.target.closest('#cmTools,#cmPanel,.cm-input,.cm-pin,#gate')) return;
+    e.preventDefault(); e.stopPropagation();
+    cmAdding=false; cmToggle.classList.remove('on'); document.body.classList.remove('cm-add');
+    cmToggle.querySelector('span').textContent='Přidat komentář';
+    const sec=e.target.closest('.vp,.block,.page-hero,section');
+    const near=sec?(sec.querySelector('h1,h2,h3')?.textContent||'').trim().slice(0,46):'';
+    openCmInput(e.pageX,e.pageY,near);
+  },true);
+
+  function openCmInput(x,y,near){
+    const box=document.createElement('div'); box.className='cm-input';
+    box.style.left=x+'px'; box.style.top=y+'px';
+    box.innerHTML='<textarea placeholder="Váš komentář k této části…"></textarea>'
+      +'<div class="row"><button class="cm-cancel">Zrušit</button><button class="cm-save">Uložit</button></div>';
+    document.body.appendChild(box); box.querySelector('textarea').focus();
+    box.querySelector('.cm-cancel').addEventListener('click',()=>box.remove());
+    box.querySelector('.cm-save').addEventListener('click',()=>{
+      const text=box.querySelector('textarea').value.trim(); if(!text){box.remove();return;}
+      const arr=cmLoad();
+      arr.push({id:Date.now(),page:currentPage,x:Math.round(x),y:Math.round(y),near:near,text:text});
+      cmSaveAll(arr); box.remove(); cmRenderPins(); cmUpdateBadge();
+    });
+  }
+
+  function cmRenderPins(){
+    document.querySelectorAll('.cm-pin').forEach(p=>p.remove());
+    const arr=cmLoad();
+    arr.forEach((c,i)=>{
+      if(c.page!==currentPage) return;
+      const pin=document.createElement('div'); pin.className='cm-pin';
+      pin.style.left=c.x+'px'; pin.style.top=c.y+'px';
+      pin.innerHTML='<span>'+(i+1)+'</span>'; pin.title=c.text;
+      pin.addEventListener('click',ev=>{ ev.stopPropagation(); cmRenderList(); document.getElementById('cmPanel').classList.add('show'); });
+      document.body.appendChild(pin);
+    });
+  }
+
+  function cmRenderList(){
+    const wrap=document.getElementById('cmItems'); const arr=cmLoad();
+    if(!arr.length){ wrap.innerHTML='<div class="cm-empty">Zatím žádné komentáře.<br>Klikněte na „Přidat komentář" a označte místo na webu.</div>'; cmUpdateBadge(); return; }
+    wrap.innerHTML=arr.map((c,i)=>'<div class="cm-item"><div class="pg">'+(i+1)+' · '+(pageNames[c.page]||c.page)+(c.near?' — '+escapeHtml(c.near):'')+'</div><p>'+escapeHtml(c.text)+'</p><span class="del" data-id="'+c.id+'">Smazat</span></div>').join('');
+    wrap.querySelectorAll('.del').forEach(d=>d.addEventListener('click',()=>{
+      cmSaveAll(cmLoad().filter(c=>String(c.id)!==d.dataset.id)); cmRenderList(); cmRenderPins(); cmUpdateBadge();
+    }));
+    cmUpdateBadge();
+  }
+
+  function cmText(){ return cmLoad().map((c,i)=>(i+1)+'. ['+(pageNames[c.page]||c.page)+(c.near?' – '+c.near:'')+']\n'+c.text).join('\n\n'); }
+  document.getElementById('cmSend').addEventListener('click',()=>{
+    if(!cmLoad().length){alert('Zatím žádné komentáře k odeslání.');return;}
+    location.href='mailto:kristyna.gezova@gmail.com?subject='+encodeURIComponent('Komentáře k webu honzasilny.cz')+'&body='+encodeURIComponent(cmText()+'\n\n— odesláno z náhledu webu');
+  });
+  document.getElementById('cmDownload').addEventListener('click',()=>{
+    if(!cmLoad().length){alert('Zatím žádné komentáře.');return;}
+    const blob=new Blob([cmText()],{type:'text/plain'}); const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob); a.download='komentare-honzasilny.txt'; a.click();
+  });
+  cmUpdateBadge();
+
   tagReveals();
   revealPage('home');
+  cmRenderPins();
 
   /* ===== DEMO ROZKLIK (vysvětlení akcí pro prezentaci) ===== */
   const demos = {
